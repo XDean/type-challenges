@@ -1,5 +1,3 @@
-// noinspection JSUnusedLocalSymbols
-
 import {Equal, Expect} from '@type-challenges/utils';
 
 type Values<S extends string, VS extends string[] = []> = S extends `${infer E},${infer REST}` ?
