@@ -1,0 +1,10 @@
+{
+  "name": "type-challenges",
+  "version": "1.0.0",
+  "devDependencies": {
+    "typescript": "^4.5.4"
+  },
+  "dependencies": {
+    "@type-challenges/utils": "^0.1.1"
+  }
+}
