@@ -6,16 +6,18 @@ enum Comparison {
   Lower,
 }
 
-type Digit<T extends string, R extends any[] = []> = T extends `${infer A}e+${infer B}`
+type Exp10<T extends string, R extends any[] = []> = T extends `${infer A}e+${infer B}`
   ? B
-  : T extends `${infer F}${infer REST}`
-    ? Digit<REST, [...R, F]>
-    : R extends [infer E, ...infer REST]
-      ? `${REST['length']}`
-      : never
+  : T extends `${infer A}e-${infer B}`
+    ? `-${B}`
+    : T extends `${infer F}${infer REST}`
+      ? Exp10<REST, [...R, F]>
+      : R extends [infer E, ...infer REST]
+        ? `${REST['length']}`
+        : never
 
-type IsNeg<T extends number> = `${T}` extends `-${string}` ? true : false
-type AbsStr<T extends number> = `${T}` extends `-${infer E}` ? E : `${T}`
+type IsNegStr<T extends string> = T extends `-${string}` ? true : false
+type AbsStr<T extends string> = T extends `-${infer E}` ? E : T
 
 type SingleDigitComparator<A extends string, B extends string, R extends any[] = []> = A extends `${R['length']}`
   ? B extends `${R['length']}`
@@ -35,25 +37,32 @@ type SameDigitComparator<A extends string, B extends string> = A extends `${infe
     : never
   : Comparison.Equal
 
-type IntStringComparator<A extends string, B extends string> = A extends B
+type PositiveIntStringComparator<A extends string, B extends string> = A extends B
   ? Comparison.Equal
-  : IntStringComparator<Digit<A>, Digit<B>> extends infer R
+  : IntStringComparator<Exp10<A>, Exp10<B>> extends infer R
     ? R extends Comparison.Equal
       ? SameDigitComparator<A, B>
       : R
     : never
 
-type Comparator<A extends number, B extends number> = A extends B
+type IntStringComparator<A extends string, B extends string> = A extends B
   ? Comparison.Equal
-  : IsNeg<A> extends true
-    ? IsNeg<B> extends true
-      ? IntStringComparator<AbsStr<B>, AbsStr<A>>
+  : IsNegStr<A> extends true
+    ? IsNegStr<B> extends true
+      ? PositiveIntStringComparator<AbsStr<B>, AbsStr<A>>
       : Comparison.Lower
-    : IsNeg<B> extends true
+    : IsNegStr<B> extends true
       ? Comparison.Greater
-      : IntStringComparator<AbsStr<A>, AbsStr<B>>
+      : PositiveIntStringComparator<AbsStr<A>, AbsStr<B>>
+
+type Comparator<A extends number, B extends number> = IntStringComparator<`${A}`, `${B}`>
 
 type cases = [
+  Expect<Equal<Comparator<1e-64, 1e-63>, Comparison.Lower>>,
+  Expect<Equal<Comparator<9e-64, 1e-63>, Comparison.Lower>>,
+  Expect<Equal<Comparator<1e-62, 1e-63>, Comparison.Greater>>,
+  Expect<Equal<Comparator<0.1e-62, 1e-63>, Comparison.Equal>>,
+  Expect<Equal<Comparator<1e-63, 1e-63>, Comparison.Equal>>,
   Expect<Equal<Comparator<1e64, 1e64>, Comparison.Equal>>,
   Expect<Equal<Comparator<1e64, 2e64>, Comparison.Lower>>,
   Expect<Equal<Comparator<1e65, 2e64>, Comparison.Greater>>,
